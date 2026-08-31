@@ -1,0 +1,13 @@
+node_modules/
+data/
+.venv/
+
+# env files — credentials live in the caller's environment, never in this repo
+.env
+.env.*
+*.env
+!.env.example
+.envrc
+
+*.log
+.DS_Store

@@ -1,0 +1,13 @@
+{
+  "answer": { "submitted": true, "value": "B. BE" },
+  "tool_log": [
+    {
+      "tool": "run_python",
+      "input": {
+        "code": "import csv\nfrom collections import Counter\nc = Counter(r['ip_country'] for r in csv.DictReader(open('payments.csv')) if r['is_fraud'] == '1')\nprint(c.most_common(4))"
+      }
+    },
+    { "tool": "submit_answer", "input": { "value": "B. BE" } }
+  ],
+  "stats": { "model": "fixture", "tool_calls": 2, "python_runs": 1, "duration_ms": 1500 }
+}

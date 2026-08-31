@@ -1,0 +1,17 @@
+{
+  "name": "apo-evals",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Realistic apo test set: public benchmark tasks converted to apo evaluations. Point an apo project task source at this repository.",
+  "scripts": {
+    "fetch:data": "bash scripts/fetch-data.sh",
+    "setup:python": "bash scripts/setup-python.sh"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^3.0.1",
+    "@apo-ai/sdk": "^0.5.0",
+    "ai": "^6.0.3",
+    "zod": "^4.0.0"
+  }
+}

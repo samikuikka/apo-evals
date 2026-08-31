@@ -1,0 +1,14 @@
+{
+  "answer": { "submitted": true, "value": "0.120132" },
+  "tool_log": [
+    { "tool": "read_file", "input": { "path": "manual.md" } },
+    {
+      "tool": "run_python",
+      "input": {
+        "code": "import json\nfees = json.load(open('fees.json'))\n# average GlobalCard fee for a 10 EUR credit transaction per manual.md rules\n# ... compute over matching fee structures ...\nprint(round(total / count, 6))"
+      }
+    },
+    { "tool": "submit_answer", "input": { "value": "0.120132" } }
+  ],
+  "stats": { "model": "fixture", "tool_calls": 3, "python_runs": 1, "duration_ms": 3400 }
+}
