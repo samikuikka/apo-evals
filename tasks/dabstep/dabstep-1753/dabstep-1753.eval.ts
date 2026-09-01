@@ -11,11 +11,12 @@
  *
  * Correctness is graded by the ported DABstep scorer (lib/dabstep.ts): for this
  * answer shape, an order-insensitive list comparison, each item re-scored by
- * the same scorer. Trajectory checks require a Python run and a submission.
+ * the same scorer. The other checks ask the agent to compute via Python and
+ * submit.
  */
-import { task } from "@apo-ai/sdk/agent-task";
+import { equals, satisfies, task } from "@apo-ai/sdk/agent-task";
 import { dabstepAdapter } from "../../../adapters/dabstep-adapter.ts";
-import { trajectoryChecks, upstreamAnswerCheck } from "../../../lib/dabstep.ts";
+import { dabstepAnswer } from "../../../lib/dabstep.ts";
 
 const EXPECTED_ANSWER = [
   "384", "394", "276", "150", "536", "286", "163", "36", "680", "939", "428", "813", "556", "51", "53",
@@ -37,5 +38,21 @@ const { test: check } = task("dabstep-1753", {
   },
 });
 
-trajectoryChecks(check, { taskId: "dabstep-1753", requireManual: false });
-upstreamAnswerCheck(check, { taskId: "dabstep-1753", expected: EXPECTED_ANSWER });
+check("computed-via-python", (t, { deliverables }) => {
+  t.check(
+    deliverables.stats.python_runs,
+    satisfies((n: number) => n >= 1, "ran Python at least once before answering"),
+  );
+  t.check(
+    deliverables.stats.tool_calls,
+    satisfies((n: number) => n >= 2 && n <= 80, "made a reasonable number of tool calls (2–80)"),
+  );
+});
+
+check("answer-submitted", (t, { deliverables }) => {
+  t.check(deliverables.answer.submitted, equals(true), "agent called submit_answer");
+});
+
+check("answer-matches-benchmark", (t, { deliverables }) => {
+  t.check(deliverables.answer.value, dabstepAnswer(EXPECTED_ANSWER));
+});

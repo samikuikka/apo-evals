@@ -11,12 +11,12 @@
  *
  * Correctness is graded by the ported DABstep scorer (lib/dabstep.ts): for this
  * answer shape, numeric comparison with the benchmark's tolerance (rel/abs
- * 1e-4), sign-sensitive. Trajectory checks require a Python run, a manual.md
- * read, and a submission.
+ * 1e-4), sign-sensitive. The other checks ask the agent to compute via Python,
+ * read manual.md, and submit.
  */
-import { task } from "@apo-ai/sdk/agent-task";
+import { equals, satisfies, task } from "@apo-ai/sdk/agent-task";
 import { dabstepAdapter } from "../../../adapters/dabstep-adapter.ts";
-import { trajectoryChecks, upstreamAnswerCheck } from "../../../lib/dabstep.ts";
+import { dabstepAnswer } from "../../../lib/dabstep.ts";
 
 const EXPECTED_ANSWER = "0.120132"; // ground truth from the pinned dev split
 
@@ -34,5 +34,31 @@ const { test: check } = task("dabstep-1273", {
   },
 });
 
-trajectoryChecks(check, { taskId: "dabstep-1273", requireManual: true });
-upstreamAnswerCheck(check, { taskId: "dabstep-1273", expected: EXPECTED_ANSWER });
+check("computed-via-python", (t, { deliverables }) => {
+  t.check(
+    deliverables.stats.python_runs,
+    satisfies((n: number) => n >= 1, "ran Python at least once before answering"),
+  );
+  t.check(
+    deliverables.stats.tool_calls,
+    satisfies((n: number) => n >= 2 && n <= 80, "made a reasonable number of tool calls (2–80)"),
+  );
+});
+
+check("read-the-manual", (t, { deliverables }) => {
+  t.check(
+    deliverables.tool_log.some(
+      (e) => e.tool === "read_file" && String(e.input.path ?? "").includes("manual"),
+    ),
+    equals(true),
+    "read manual.md before answering a documentation-backed question",
+  );
+});
+
+check("answer-submitted", (t, { deliverables }) => {
+  t.check(deliverables.answer.submitted, equals(true), "agent called submit_answer");
+});
+
+check("answer-matches-benchmark", (t, { deliverables }) => {
+  t.check(deliverables.answer.value, dabstepAnswer(EXPECTED_ANSWER));
+});
