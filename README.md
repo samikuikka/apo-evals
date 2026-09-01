@@ -66,6 +66,7 @@ pnpm fetch:data                  # dev.jsonl + data bundle at the pinned revisio
 pnpm convert:dabstep -- --all    # one pass per test case: eval.ts + question.md + fixtures
 pnpm convert:dabstep -- 70 1273  # regenerate specific cases
 pnpm convert:dabstep -- --check  # verify generated tasks match the dataset
+apo task publish --dir .         # refresh the project's task catalog (metadata only)
 ```
 
 Per test case, the converter reads the upstream record (question, guidelines,
