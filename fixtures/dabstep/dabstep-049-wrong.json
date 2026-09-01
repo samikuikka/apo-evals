@@ -1,19 +1,19 @@
 {
   "answer": {
     "submitted": true,
-    "value": "BE"
+    "value": "A. NL"
   },
   "tool_log": [
     {
       "tool": "run_python",
       "input": {
-        "code": "import csv\nfrom collections import Counter\nc = Counter(r['issuing_country'] for r in csv.DictReader(open('payments.csv')))\nprint(c.most_common(1)[0][0])"
+        "code": "import csv\nfrom collections import Counter\nfraud = [r for r in csv.DictReader(open('payments.csv')) if r['is_fraud'] == '1']\nprint(Counter(r['ip_country'] for r in fraud).most_common(1))"
       }
     },
     {
       "tool": "submit_answer",
       "input": {
-        "value": "BE"
+        "value": "A. NL"
       }
     }
   ],

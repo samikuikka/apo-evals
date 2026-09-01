@@ -35,7 +35,7 @@ pnpm fetch:data        # downloads the ~24 MB DABstep bundle (gitignored)
 pnpm setup:python      # optional: local venv with pandas for the agent
 
 export OPENROUTER_API_KEY=...   # any OpenRouter key
-export OPENROUTER_MODEL=google/gemini-2.5-flash-lite   # or any cheap model
+export OPENROUTER_MODEL=z-ai/glm-5.3-flash   # cheap flash-tier models only — never frontier
 
 apo task run dabstep-005 --dir .
 ```

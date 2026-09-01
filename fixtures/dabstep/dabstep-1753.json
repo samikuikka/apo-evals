@@ -1,0 +1,26 @@
+{
+  "answer": {
+    "submitted": true,
+    "value": "384, 394, 276, 150, 536, 286, 163, 36, 680, 939, 428, 813, 556, 51, 53, 572, 960, 64, 709, 454, 595, 725, 473, 347, 477, 608, 868, 741, 231, 107, 626, 249, 123, 381"
+  },
+  "tool_log": [
+    {
+      "tool": "run_python",
+      "input": {
+        "code": "import json\nfees = json.load(open('fees.json'))\n# fee ids applicable to the requested merchant/date window\nprint(', '.join(str(fee_id) for fee_id in ids))"
+      }
+    },
+    {
+      "tool": "submit_answer",
+      "input": {
+        "value": "384, 394, 276, 150, 536, 286, 163, 36, 680, 939, 428, 813, 556, 51, 53, 572, 960, 64, 709, 454, 595, 725, 473, 347, 477, 608, 868, 741, 231, 107, 626, 249, 123, 381"
+      }
+    }
+  ],
+  "stats": {
+    "model": "fixture",
+    "tool_calls": 2,
+    "python_runs": 1,
+    "duration_ms": 1500
+  }
+}

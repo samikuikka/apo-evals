@@ -36,6 +36,37 @@ await registerApoTracing();
 const DEFAULT_MODEL = "deepseek/deepseek-v4-flash-0731";
 const MAX_STEPS = 40;
 
+/**
+ * Cheap-models-only policy (repo-wide): this test set runs cheap flash-tier
+ * models, never frontier ones — the whole point is pennies-per-run demo data.
+ * The deny-list catches known frontier families so an ambient OPENROUTER_MODEL
+ * can't silently burn money; APO_EVALS_ALLOW_ANY_MODEL=1 overrides deliberately.
+ */
+const FRONTIER_MODEL_PATTERNS: RegExp[] = [
+  /claude/i,
+  /gpt-4/i,
+  /gpt-5/i,
+  /\/o[134](-|$)/i,
+  /gemini-\d[^/]*pro/i,
+  /grok-[34]/i,
+  /deepseek-r\d/i,
+  /deepseek-reasoner/i,
+  /qwen-max/i,
+  /mistral-large/i,
+  /^z-ai\/glm-\d+(\.\d+)?$/i, // exact big GLM ids — flash variants are fine
+];
+
+function assertCheapModel(model: string): void {
+  if (process.env.APO_EVALS_ALLOW_ANY_MODEL === "1") return;
+  if (FRONTIER_MODEL_PATTERNS.some((p) => p.test(model))) {
+    throw new Error(
+      `"${model}" looks like a frontier model — this repo runs cheap models only. ` +
+        "Set OPENROUTER_MODEL to a flash-tier model, or export " +
+        "APO_EVALS_ALLOW_ANY_MODEL=1 to override deliberately.",
+    );
+  }
+}
+
 /** One line per context file so the agent knows what exists without guessing. */
 const CONTEXT_FILES = [
   "payments.csv — ~139k transactions; columns documented in payments-readme.md",
@@ -142,6 +173,7 @@ export const dabstepAdapter = defineAdapter({
 
   async startSession(ctx) {
     const state = (ctx.state ?? EMPTY_STATE) as DabstepState;
+    assertCheapModel(state.model);
     const contextDir = resolveContextDir(ctx.taskDir);
     const pythonBin = resolvePythonBin(resolve(contextDir, "..", "..", ".."));
 
