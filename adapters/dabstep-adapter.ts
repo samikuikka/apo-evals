@@ -22,7 +22,8 @@
  * against a frozen answer. No network, no provider credentials. Same seam as
  * APO_HARBOR_FIXTURE in the apo example tree.
  */
-import { defineAdapter, registerApoTracing } from "@apo-ai/sdk/agent-task";
+import { createApoTracer, defineAdapter, registerApoTracing } from "@apo-ai/sdk/agent-task";
+import type { AgentTaskTraceContext } from "@apo-ai/sdk/agent-task";
 import { createOpenAI } from "@ai-sdk/openai";
 import { generateText, hasToolCall, stepCountIs, tool } from "ai";
 import { readFile } from "node:fs/promises";
@@ -177,7 +178,10 @@ export const dabstepAdapter = defineAdapter({
     const contextDir = resolveContextDir(ctx.taskDir);
     const pythonBin = resolvePythonBin(resolve(contextDir, "..", "..", ".."));
 
-    const runAgent = async (question: string) => {
+    const runAgent = async (
+      question: string,
+      telemetry: { trace: AgentTaskTraceContext; parentSpanId?: string; turnNumber?: number },
+    ) => {
       const openai = createOpenAI({
         apiKey: process.env.OPENROUTER_API_KEY,
         baseURL: process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1",
@@ -226,7 +230,13 @@ export const dabstepAdapter = defineAdapter({
         prompt: question,
         tools,
         stopWhen: [hasToolCall(submitAnswer), stepCountIs(MAX_STEPS)],
-        experimental_telemetry: { enabled: true },
+        // Direct AI SDK integration: translates ai.toolCall / ai.generateText
+        // spans into apo TOOL/GENERATION observations (tokens, cost, timeline).
+        experimental_telemetry: createApoTracer({
+          trace: telemetry.trace,
+          parentSpanId: telemetry.parentSpanId,
+          turnNumber: telemetry.turnNumber,
+        }),
       });
       return result.text;
     };
@@ -234,7 +244,7 @@ export const dabstepAdapter = defineAdapter({
     return {
       runConfiguration: { model: state.model },
 
-      async sendUserTurn(turn: unknown) {
+      async sendUserTurn(turn, { trace, parentSpanId, turnNumber }) {
         const question = typeof turn === "string" ? turn : String(turn);
 
         if (process.env.DABSTEP_FIXTURE) {
@@ -249,7 +259,7 @@ export const dabstepAdapter = defineAdapter({
           return { response: `[fixture replay] ${process.env.DABSTEP_FIXTURE}` };
         }
 
-        return { response: await runAgent(question) };
+        return { response: await runAgent(question, { trace, parentSpanId, turnNumber }) };
       },
     };
   },

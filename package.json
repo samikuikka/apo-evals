@@ -6,7 +6,9 @@
   "description": "Realistic apo test set: public benchmark tasks converted to apo evaluations. Point an apo project task source at this repository.",
   "scripts": {
     "fetch:data": "bash scripts/fetch-data.sh",
-    "setup:python": "bash scripts/setup-python.sh"
+    "setup:python": "bash scripts/setup-python.sh",
+    "convert:dabstep": "node scripts/convert-dabstep.ts",
+    "verify:fixtures": "bash scripts/verify-fixtures.sh"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.1",

@@ -41,8 +41,22 @@ import {
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-/** Keep in sync with DABSTEP_REV in scripts/fetch-data.sh. */
-const DABSTEP_REV = "f6980beb8908f6dbb5056924f020fa49a0bf946b";
+/**
+ * The dataset pin, read from scripts/fetch-data.sh — that script is the
+ * single source of truth for the revision. Moving the pin is: bump it there,
+ * re-fetch, `pnpm convert:dabstep -- --check` to see which cases moved,
+ * regenerate, `pnpm verify:fixtures`.
+ */
+async function loadDabstepRev(): Promise<string> {
+  const fetchScript = await readFile(join(REPO_ROOT, "scripts", "fetch-data.sh"), "utf8");
+  const match = fetchScript.match(/^DABSTEP_REV="([0-9a-f]{40})"$/m);
+  if (!match) {
+    throw new Error("could not read DABSTEP_REV from scripts/fetch-data.sh");
+  }
+  return match[1];
+}
+
+const DABSTEP_REV = await loadDabstepRev();
 
 const DEV_JSONL =
   process.env.DABSTEP_DATA_DIR
@@ -180,6 +194,11 @@ function wrap(text: string, width: number): string[] {
   return lines;
 }
 
+/** Wrap paragraphs to comment width; empty strings pass through as separators. */
+function wrapBlock(paragraphs: string[]): string[] {
+  return paragraphs.flatMap((p) => (p === "" ? [""] : wrap(p, 77)));
+}
+
 function padTaskId(upstreamId: string): string {
   return `dabstep-${upstreamId.padStart(3, "0")}`;
 }
@@ -276,7 +295,7 @@ function evalSource(c: DabstepCase, config: CaseConfig): string {
     ``,
   ];
 
-  return `/**\n${header.join("\n")}\n */\n${body.join("\n")}`;
+  return `/**\n${header}\n */\n${body.join("\n")}`;
 }
 
 function shapeNote(shape: AnswerShape): string {

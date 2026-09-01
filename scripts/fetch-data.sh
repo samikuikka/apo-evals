@@ -3,8 +3,12 @@
 #
 # Pinned to a dataset commit (not a branch) so every checkout of this repo
 # evaluates against identical data and identical ground-truth answers.
-# To move the pin: update DABSTEP_REV here AND the benchmark_task_revision
-# metadata in every tasks/dabstep/*.eval.ts, then re-verify each task.
+# This file is the single source of truth for the pin: scripts/convert-dabstep.ts
+# reads DABSTEP_REV from here and stamps it into every generated task.
+# To move the pin: update DABSTEP_REV here, re-fetch, then
+#   pnpm convert:dabstep -- --check   # shows which tasks' ground truth moved
+#   pnpm convert:dabstep -- --all     # regenerate
+#   pnpm verify:fixtures              # re-verify the pipeline, zero tokens
 set -euo pipefail
 
 DABSTEP_REV="f6980beb8908f6dbb5056924f020fa49a0bf946b"

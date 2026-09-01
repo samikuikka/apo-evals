@@ -50,7 +50,44 @@ DABSTEP_FIXTURE=fixtures/dabstep/dabstep-005.json apo task run dabstep-005 --dir
 
 The full pipeline — deliverable collection, checks, run recording — executes
 against a frozen answer. Wrong-answer fixtures exist to verify the failure
-path.
+path. Verify every fixture pair at once with nothing recorded:
+
+```bash
+pnpm verify:fixtures    # pass fixtures PASS, wrong fixtures FAIL, zero tokens
+```
+
+## The conversion workflow
+
+Tasks are not hand-written: every DABstep task under `tasks/dabstep/` is
+generated from the pinned dev split by a dynamic per-test-case workflow.
+
+```bash
+pnpm fetch:data                  # dev.jsonl + data bundle at the pinned revision
+pnpm convert:dabstep -- --all    # one pass per test case: eval.ts + question.md + fixtures
+pnpm convert:dabstep -- 70 1273  # regenerate specific cases
+pnpm convert:dabstep -- --check  # verify generated tasks match the dataset
+```
+
+Per test case, the converter reads the upstream record (question, guidelines,
+ground-truth answer, level), classifies the answer shape (string,
+multiple-choice, numeric, list, not-applicable), and emits:
+
+- an `.eval.ts` pinning the ground truth at conversion time (with the dataset
+  revision in metadata) and registering the trajectory checks plus the
+  upstream answer check,
+- a `files/question.md` with the question, guidelines, and a per-case data hint,
+- a pass fixture and a wrong fixture — the wrong answer is derived from the
+  shape (different option, ~1% off numerically, one list item dropped) and
+  proven to fail the scorer before anything is written.
+
+The scorer itself is a port of DABstep's official `question_scorer`, kept in
+`lib/dabstep.ts` — one implementation shared by all tasks, no LLM judges on
+answers the benchmark already scores deterministically.
+
+**When the dataset pin moves** (see `scripts/fetch-data.sh`, the single source
+of truth for the revision): re-fetch, run `pnpm convert:dabstep -- --check` to
+see exactly which cases' ground truth moved, regenerate with `--all`, then
+`pnpm verify:fixtures`.
 
 ## Task index
 
@@ -58,7 +95,14 @@ path.
 |---|---|---|
 | `dabstep-005` | easy | Grouped count over 139k-row CSV; exact string answer |
 | `dabstep-049` | easy | Filtered count; multiple-choice formatted answer |
+| `dabstep-070` | easy | Fine-threshold lookup; "Not Applicable" answer, manual.md trajectory check |
 | `dabstep-1273` | hard | Fee computation from documentation (manual.md) + fees.json, 6-decimal numeric answer with tolerance |
+| `dabstep-1305` | hard | Fee computation with account type + MCC joins, numeric with tolerance |
+| `dabstep-1464` | hard | Fee-ID applicability filter; 416-value list answer, order-insensitive scoring |
+| `dabstep-1681` | hard | Merchant fee-ID window query; 10-value list answer |
+| `dabstep-1753` | hard | Merchant fee-ID window query; 34-value list answer |
+| `dabstep-1871` | hard | Relative-fee delta (counterfactual what-if), signed numeric with tolerance |
+| `dabstep-2697` | hard | ACI-incentive optimization; `{card_scheme}:{fee}` formatted answer |
 
 ## The conversion rule
 
@@ -82,10 +126,10 @@ When converting a benchmark task to apo, in priority order:
 
 ```
 adapters/    one adapter per benchmark family (owns the agent + deliverables)
-lib/         subprocess/exec helpers
-tasks/       <source>/<task-id>/<task-id>.eval.ts + files/question.md
-fixtures/    canned runs for zero-cost replay (pass and fail variants)
-scripts/     data fetch + python setup
+lib/         subprocess/exec helpers + the ported DABstep scorer and checks
+tasks/       <source>/<task-id>/<task-id>.eval.ts + files/question.md (generated)
+fixtures/    canned runs for zero-cost replay (pass and fail variants, generated)
+scripts/     data fetch, python setup, and the per-case conversion workflow
 data/        fetched benchmark data (gitignored, pinned by revision)
 ```
 
